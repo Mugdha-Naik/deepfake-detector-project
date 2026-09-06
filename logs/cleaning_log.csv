@@ -1,0 +1,4 @@
+step,input_count,removed_count,output_count,reason
+1_video_integrity,13529,0,13529,failed to open / unreadable
+2_duplicate_detection,13529,0,13529,identical file hash (MD5)
+3_label_consistency,13529,0,13529,folder name did not match expected labels
