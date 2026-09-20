@@ -25,7 +25,11 @@ import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
-from facenet_pytorch import MTCNN
+# NOTE: facenet_pytorch is deliberately NOT imported here at module level.
+# Notebooks that only need CELEB_ROOT/FF_ROOT/get_label_from_path etc.
+# (like Step 6) should not be forced to have facenet-pytorch installed
+# just to import this file. It's imported lazily inside load_mtcnn()
+# instead — the only function that actually needs it.
 
 
 # ============================================================
@@ -124,6 +128,8 @@ def get_label_from_path(path):
 
 def load_mtcnn(device=None):
     """Load the project's standard MTCNN face detector."""
+    from facenet_pytorch import MTCNN  # lazy import — see note at top of file
+
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -313,4 +319,3 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 #
 # Put this file at the repo root (or in a clearly named folder like
 # `pipeline/utils.py` — just update the sys.path/import line to match).
-
