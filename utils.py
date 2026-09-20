@@ -272,7 +272,22 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 #
 # !pip install -q torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu121
 # !pip install -q facenet-pytorch==2.6.0
-# !pip install -q facenet-pytorch==2.6.0
+# !pip install -q --no-deps facenet-pytorch==2.6.0
+#
+# --no-deps is deliberate. Letting pip's resolver install facenet-pytorch
+# normally pulls in a different Pillow (it requires >=10.2, <10.3) and
+# can change numpy underneath an already-compiled torch, which corrupts
+# torch's C extension (NameError: name '_C' is not defined) and breaks
+# torchvision's ImageFont import (is_directory missing from PIL._util).
+# Neither is fixable by picking better version pins — Kaggle's
+# pre-installed torch/torchvision/numpy/Pillow already work together;
+# the fix is to not let anything touch them.
+#
+# If a session has already been through several package reinstalls and
+# hits import errors that don't match this note, STOP the session
+# entirely (not just restart) and start fresh — repeated reinstalls can
+# leave the on-disk packages in a genuinely inconsistent state that a
+# plain kernel restart does not fix.
 #
 # Then, BEFORE importing torch/torchvision/facenet_pytorch, run:
 #
@@ -283,14 +298,9 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 #   if not hasattr(_util, "is_path"):
 #       _util.is_path = lambda path: isinstance(path, (bytes, str, os.PathLike))
 #
-# WHY: torchvision's ImageFont import chain needs is_directory/is_path
-# from PIL._util, which newer Pillow (>=10.0) removed. facenet-pytorch
-# separately REQUIRES Pillow >=10.2, so there is no single Pillow
-# version that avoids this — not with an old pin, not with Kaggle's
-# pre-installed torchvision either (confirmed: the bug reproduces even
-# without reinstalling torch/torchvision). Patching the two missing
-# functions back in directly sidesteps the version conflict entirely,
-# rather than hunting for a compatible version pair that does not exist.
+# This patch is a cheap safety net kept in place even with --no-deps,
+# in case Kaggle's own pre-installed Pillow/torchvision combination
+# still hits the same import chain.
 #
 # !git clone https://github.com/Mugdha-Naik/deepfake-detector-project.git /kaggle/working/repo
 # import sys
