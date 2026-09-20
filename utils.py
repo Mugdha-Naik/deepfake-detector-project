@@ -274,21 +274,23 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 # !pip install -q facenet-pytorch==2.6.0
 # !pip install -q facenet-pytorch==2.6.0
 #
-# DO NOT force-reinstall torch/torchvision/torchaudio or pin Pillow
-# manually. This was tried and failed for a real reason, not a fluke:
-#   - torchvision==0.17.2 breaks with any Pillow >= 10.0 (is_directory
-#     was removed from PIL._util)
-#   - facenet-pytorch==2.6.0 itself REQUIRES Pillow >= 10.2, < 10.3
-#   - these two requirements do not overlap -- no single Pillow version
-#     satisfies both, so pinning torchvision==0.17.2 was the actual bug,
-#     not the Pillow version.
-# Kaggle's pre-installed torch/torchvision is newer and does not have
-# this problem. Just install facenet-pytorch and let pip resolve a
-# compatible Pillow on its own -- do not override it manually.
+# Then, BEFORE importing torch/torchvision/facenet_pytorch, run:
 #
-# Verify first, before installing anything:
-#   import torch, torchvision
-#   print(torch.__version__, torchvision.__version__, torch.cuda.is_available())
+#   import PIL._util as _util
+#   import os
+#   if not hasattr(_util, "is_directory"):
+#       _util.is_directory = lambda path: os.path.isdir(path)
+#   if not hasattr(_util, "is_path"):
+#       _util.is_path = lambda path: isinstance(path, (bytes, str, os.PathLike))
+#
+# WHY: torchvision's ImageFont import chain needs is_directory/is_path
+# from PIL._util, which newer Pillow (>=10.0) removed. facenet-pytorch
+# separately REQUIRES Pillow >=10.2, so there is no single Pillow
+# version that avoids this — not with an old pin, not with Kaggle's
+# pre-installed torchvision either (confirmed: the bug reproduces even
+# without reinstalling torch/torchvision). Patching the two missing
+# functions back in directly sidesteps the version conflict entirely,
+# rather than hunting for a compatible version pair that does not exist.
 #
 # !git clone https://github.com/Mugdha-Naik/deepfake-detector-project.git /kaggle/working/repo
 # import sys
@@ -301,3 +303,4 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 #
 # Put this file at the repo root (or in a clearly named folder like
 # `pipeline/utils.py` — just update the sys.path/import line to match).
+
