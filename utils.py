@@ -35,10 +35,10 @@ from facenet_pytorch import MTCNN
 CELEB_ROOT = "/kaggle/input/datasets/reubensuju/celeb-df-v2"
 FF_ROOT = "/kaggle/input/datasets/xdxd003/ff-c23/FaceForensics++_C23"
 
-# TEAM DECISION: two different GitHub forks were used across notebooks
-# (SrishtiKumari08 vs NancyKashyap29). Pick ONE canonical source and
-# update this constant — do not let teammates read from different forks.
-CSV_URL = "https://raw.githubusercontent.com/SrishtiKumari08/deepfake-detector-project/master/logs/clean_video_list.csv"
+# Canonical repo confirmed: Mugdha-Naik/deepfake-detector-project
+# (Srishti and Nancy's forks were used for individual commits, but PRs
+# have been merged back into this repo — this is the single source of truth.)
+CSV_URL = "https://raw.githubusercontent.com/Mugdha-Naik/deepfake-detector-project/master/logs/clean_video_list.csv"
 
 MIN_CONFIDENCE = 0.90
 FRAME_INTERVAL = 10          # used by the "interval" sampling strategy
@@ -270,7 +270,22 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 # USAGE (copy this into the top of each Kaggle notebook)
 # ============================================================
 #
-# !git clone https://github.com/SrishtiKumari08/deepfake-detector-project.git /kaggle/working/repo
+# !pip install -q torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu121
+# !pip install -q facenet-pytorch==2.6.0
+# !pip install -q --force-reinstall --no-cache-dir "Pillow==9.5.0"
+#
+# NOTE ON VERSION: Pillow 10.0+ removed is_directory/is_path from
+# PIL._util, which torchvision 0.17.2's ImageFont import needs. Pillow
+# 10.2.0 (tried earlier) is PAST that removal and still fails — 9.5.0 is
+# confirmed to predate it. If this notebook is run via "Save & Run All
+# (Commit)", the whole thing executes fresh in ONE process — there is no
+# stale import to fix by restarting; if you see the is_directory
+# ImportError there, it is a real version mismatch, not a caching issue.
+# (For interactive/live sessions specifically — not commits — restarting
+# the kernel after a package change is still good practice, but it will
+# NOT fix a genuinely incompatible version pin like Pillow 10.2.0 was.)
+#
+# !git clone https://github.com/Mugdha-Naik/deepfake-detector-project.git /kaggle/working/repo
 # import sys
 # sys.path.append("/kaggle/working/repo")
 # from utils import (
@@ -281,3 +296,4 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 #
 # Put this file at the repo root (or in a clearly named folder like
 # `pipeline/utils.py` — just update the sys.path/import line to match).
+
