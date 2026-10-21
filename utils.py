@@ -319,3 +319,80 @@ def apply_quality_filters(df, blur_threshold=BLUR_THRESHOLD,
 #
 # Put this file at the repo root (or in a clearly named folder like
 # `pipeline/utils.py` — just update the sys.path/import line to match).
+
+# ---- ADDITIONS to utils.py (new functions only; nothing existing is modified) ----
+import os, json
+import pandas as pd
+
+def get_dataset_source(path):
+    """'Celeb-DF' or 'FaceForensics++' from a CSV path OR a resolved Kaggle path."""
+    p = str(path).lower().replace("\\", "/")
+    if "celeb-df" in p or "/cel/" in p:
+        return "Celeb-DF"
+    if "faceforensics++" in p:
+        return "FaceForensics++"
+    return "UNKNOWN"
+
+def count_sampled_frames(video_path, interval):
+    """Frames Step 4/5 would sample from a video (frame_idx % interval == 0).
+    Lazy cv2 import, same pattern as load_mtcnn. Approximate: verify on a few videos."""
+    import cv2
+    cap = cv2.VideoCapture(video_path)
+    n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return (n + interval - 1) // interval if n > 0 else 0
+
+def make_log_row(step, level, unit, n_in, n_out, action, reason, source=""):
+    """One row of cleaning_log_full.csv. action: 'removed' | 'flagged' | 'info'."""
+    assert 0 <= n_out <= n_in, f"{step}: n_out={n_out} exceeds n_in={n_in}"
+    removed = n_in - n_out
+    return {"step": step, "level": level, "unit": unit, "n_in": n_in,
+            "n_removed": removed, "n_out": n_out,
+            "pct_removed": round(removed / n_in * 100, 2) if n_in else 0.0,
+            "action": action, "reason": reason, "source": source}
+
+def validate_log(df):
+    assert ((df["n_in"] - df["n_removed"]) == df["n_out"]).all(), "log arithmetic broken"
+    assert (df["n_removed"] >= 0).all(), "negative removal count"
+    return True
+
+# ---- official split helpers (FF++ ids; Celeb-DF test list) ----
+def _flatten_ids(obj):
+    if isinstance(obj, (list, tuple)):
+        for x in obj:
+            yield from _flatten_ids(x)
+    else:
+        yield str(obj).zfill(3)
+
+def load_ffpp_split_ids(split_dir):
+    """Reads train.json / val.json / test.json from the official FF++ repo -> {id: split}."""
+    id2split = {}
+    for split in ("train", "val", "test"):
+        with open(os.path.join(split_dir, f"{split}.json")) as f:
+            for vid in _flatten_ids(json.load(f)):
+                assert id2split.get(vid, split) == split, f"id {vid} in two splits"
+                id2split[vid] = split
+    return id2split
+
+def ffpp_split_for_path(path, id2split):
+    """'original/071.mp4' or 'Deepfakes/071_054.mp4' -> split. Both ids of a pair must agree.
+    Anything not parseable as ids (e.g. DeepFakeDetection files) -> 'excluded'."""
+    p = str(path).replace("\\", "/")
+    if "deepfakedetection" in p.lower():
+        return "excluded"
+    stem = os.path.splitext(os.path.basename(p))[0]
+    ids = stem.split("_")
+    if not all(i.isdigit() for i in ids):
+        return "excluded"
+    splits = {id2split.get(i.zfill(3)) for i in ids}
+    return splits.pop() if len(splits) == 1 and None not in splits else "excluded"
+
+def load_celebdf_test_names(list_path):
+    """List_of_testing_videos.txt lines look like '<0/1> Celeb-real/id0_0000.mp4' -> set of rel paths."""
+    names = set()
+    with open(list_path) as f:
+        for line in f:
+            parts = line.strip().split()
+            if parts:
+                names.add(parts[-1].replace("\\", "/"))
+    return names
