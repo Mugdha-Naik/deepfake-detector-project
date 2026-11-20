@@ -1,0 +1,16 @@
+{
+  "success": false,
+  "error": true,
+  "error_code": "ANALYSIS_FAILED",
+  "message": "Something went wrong while analyzing the uploaded file. Please try again.",
+  "face_found": null,
+  "p_fake": null,
+  "threshold": 0.2217,
+  "verdict": null,
+  "heatmap_10x10": null,
+  "heatmap_png": null,
+  "faithfulness": null,
+  "stability": null,
+  "reliability": "pending",
+  "is_mock": true
+}
