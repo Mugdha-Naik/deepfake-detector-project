@@ -1,0 +1,13 @@
+{
+  "face_found": false,
+  "p_fake": null,
+  "threshold": 0.2217,
+  "verdict": null,
+  "heatmap_10x10": null,
+  "heatmap_png": null,
+  "faithfulness": null,
+  "stability": null,
+  "reliability": "pending",
+  "message": "No face detected in the uploaded file. Please upload an image containing a clear face.",
+  "is_mock": true
+}
